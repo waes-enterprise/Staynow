@@ -216,7 +216,7 @@ async function main() {
   console.log(`✅ Created sample user: ${sampleUser.id}`);
 
   // Create lodges
-  const createdLodges = [];
+  const createdLodges: any[] = [];
   for (const lodge of lodgeData) {
     const created = await db.lodge.create({
       data: {
