@@ -44,6 +44,7 @@ export async function GET(
     }
 
     const activeReservations = lodge.reservations.length;
+    const roomsAvailable = Math.max(0, lodge.availableRooms - activeReservations);
     let availability: 'LIKELY_AVAILABLE' | 'CHECK' | 'LIKELY_FULL';
     if (activeReservations < 3) {
       availability = 'LIKELY_AVAILABLE';
@@ -53,20 +54,27 @@ export async function GET(
       availability = 'LIKELY_FULL';
     }
 
+    const parsedImages: string[] = JSON.parse(lodge.images || '[]');
+
     return NextResponse.json({
       id: lodge.id,
       name: lodge.name,
       description: lodge.description,
-      location: lodge.location,
+      city: lodge.location,
       address: lodge.address,
       phone: lodge.phone,
-      price: lodge.price,
+      pricePerNight: lodge.price,
       priceUnit: lodge.priceUnit,
       latitude: lodge.latitude,
       longitude: lodge.longitude,
+      imageUrl: parsedImages[0] || '',
       amenities: JSON.parse(lodge.amenities || '[]'),
+      tags: JSON.parse(lodge.tags || '[]'),
       rating: lodge.rating,
+      reviewCount: lodge.reviewCount,
       totalRooms: lodge.totalRooms,
+      roomsAvailable: roomsAvailable,
+      featured: lodge.featured,
       gradient,
       activeReservations,
       availability,

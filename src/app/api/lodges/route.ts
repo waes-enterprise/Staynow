@@ -61,6 +61,7 @@ export async function GET(request: NextRequest) {
 
     let enrichedLodges = lodges.map((lodge, index) => {
       const activeReservations = lodge.reservations.length;
+      const roomsAvailable = Math.max(0, lodge.availableRooms - activeReservations);
       let availability: 'LIKELY_AVAILABLE' | 'CHECK' | 'LIKELY_FULL';
       if (activeReservations < 3) {
         availability = 'LIKELY_AVAILABLE';
@@ -74,20 +75,27 @@ export async function GET(request: NextRequest) {
         ? calculateDistance(lat, lng, lodge.latitude, lodge.longitude)
         : null;
 
+      const parsedImages: string[] = JSON.parse(lodge.images || '[]');
+
       return {
         id: lodge.id,
         name: lodge.name,
         description: lodge.description,
-        location: lodge.location,
+        city: lodge.location,
         address: lodge.address,
         phone: lodge.phone,
-        price: lodge.price,
+        pricePerNight: lodge.price,
         priceUnit: lodge.priceUnit,
         latitude: lodge.latitude,
         longitude: lodge.longitude,
+        imageUrl: parsedImages[0] || '',
         amenities: JSON.parse(lodge.amenities || '[]'),
+        tags: JSON.parse(lodge.tags || '[]'),
         rating: lodge.rating,
+        reviewCount: lodge.reviewCount,
         totalRooms: lodge.totalRooms,
+        roomsAvailable: roomsAvailable,
+        featured: lodge.featured,
         gradient: getGradient(index),
         activeReservations,
         availability,
@@ -101,7 +109,7 @@ export async function GET(request: NextRequest) {
       enrichedLodges = enrichedLodges.filter(
         (l) =>
           l.name.toLowerCase().includes(s) ||
-          l.location.toLowerCase().includes(s) ||
+          l.city.toLowerCase().includes(s) ||
           l.address.toLowerCase().includes(s)
       );
     }
@@ -112,10 +120,10 @@ export async function GET(request: NextRequest) {
         enrichedLodges.sort((a, b) => (a.distance ?? 9999) - (b.distance ?? 9999));
         break;
       case 'price_asc':
-        enrichedLodges.sort((a, b) => a.price - b.price);
+        enrichedLodges.sort((a, b) => a.pricePerNight - b.pricePerNight);
         break;
       case 'price_desc':
-        enrichedLodges.sort((a, b) => b.price - a.price);
+        enrichedLodges.sort((a, b) => b.pricePerNight - a.pricePerNight);
         break;
       case 'rating':
       default:

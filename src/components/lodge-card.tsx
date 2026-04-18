@@ -34,13 +34,20 @@ export function LodgeCard({ lodge, index = 0 }: LodgeCardProps) {
     <Card className="card-hover overflow-hidden border-0 bg-card/80 backdrop-blur-sm group animate-fadeIn stagger-children">
       {/* Image Section */}
       <div className="relative aspect-[16/10] overflow-hidden">
-        <Image
-          src={lodge.imageUrl}
-          alt={lodge.name}
-          fill
-          className="object-cover transition-transform duration-500 group-hover:scale-110"
-          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-        />
+        {lodge.imageUrl ? (
+          <Image
+            src={lodge.imageUrl}
+            alt={lodge.name}
+            fill
+            className="object-cover transition-transform duration-500 group-hover:scale-110"
+            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+            unoptimized
+          />
+        ) : (
+          <div className="w-full h-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center">
+            <span className="text-2xl font-bold text-white/80">{lodge.name.charAt(0)}</span>
+          </div>
+        )}
 
         {/* Dark gradient overlay */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />

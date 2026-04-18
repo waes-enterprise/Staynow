@@ -15,19 +15,24 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 
+interface ReservationLodge {
+  name: string;
+  city: string;
+  address: string;
+  pricePerNight: number;
+  imageUrl: string;
+  phone?: string;
+}
+
 interface Reservation {
   id: string;
   lodgeId: string;
   status: string;
   createdAt: string;
-  lodge?: {
-    name: string;
-    city: string;
-    address: string;
-    pricePerNight: number;
-    imageUrl: string;
-    phone?: string;
-  };
+  expiresAt?: string;
+  userName?: string;
+  userContact?: string;
+  lodge?: ReservationLodge;
 }
 
 export default function ReservationDetailPage() {
@@ -44,6 +49,14 @@ export default function ReservationDetailPage() {
         if (res.ok) {
           const data = await res.json();
           setReservation(data);
+          // Calculate remaining time from expiresAt
+          if (data.expiresAt) {
+            const remaining = Math.max(
+              0,
+              Math.floor((new Date(data.expiresAt).getTime() - Date.now()) / 1000)
+            );
+            setTimeLeft(remaining);
+          }
         }
       } catch {
         // empty

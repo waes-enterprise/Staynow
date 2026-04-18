@@ -48,18 +48,29 @@ export async function POST(request: NextRequest) {
             name: true,
             location: true,
             address: true,
+            phone: true,
+            price: true,
+            priceUnit: true,
+            images: true,
           },
         },
       },
     });
 
+    const parsedImages: string[] = JSON.parse(reservation.lodge.images || '[]');
+
     return NextResponse.json({
       id: reservation.id,
       shortId: reservation.id.substring(0, 8),
       lodgeId: reservation.lodgeId,
-      lodgeName: reservation.lodge.name,
-      lodgeLocation: reservation.lodge.location,
-      lodgeAddress: reservation.lodge.address,
+      lodge: {
+        name: reservation.lodge.name,
+        city: reservation.lodge.location,
+        address: reservation.lodge.address,
+        phone: reservation.lodge.phone,
+        pricePerNight: reservation.lodge.price,
+        imageUrl: parsedImages[0] || '',
+      },
       userName: reservation.userName,
       userContact: reservation.userContact,
       status: reservation.status,

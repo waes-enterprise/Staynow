@@ -21,10 +21,12 @@ import {
   Tv,
   BedDouble,
   AlertTriangle,
+  X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 
 interface Lodge {
   id: string;
@@ -42,6 +44,7 @@ interface Lodge {
   amenities?: string[];
   latitude: number;
   longitude: number;
+  phone: string;
 }
 
 const AMENITY_ICONS: Record<string, React.ReactNode> = {
@@ -82,7 +85,11 @@ export default function LodgeDetailPage() {
   const router = useRouter();
   const [lodge, setLodge] = useState<Lodge | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showReserveDialog, setShowReserveDialog] = useState(false);
   const [reserving, setReserving] = useState(false);
+  const [reserveName, setReserveName] = useState("");
+  const [reservePhone, setReservePhone] = useState("");
+  const [reserveError, setReserveError] = useState("");
 
   useEffect(() => {
     async function fetchLodge() {
@@ -103,19 +110,33 @@ export default function LodgeDetailPage() {
 
   async function handleReserve() {
     if (!lodge) return;
+    setReserveError("");
+
+    if (!reserveName.trim() || !reservePhone.trim()) {
+      setReserveError("Please enter your name and phone number");
+      return;
+    }
+
     setReserving(true);
     try {
       const res = await fetch("/api/reservations", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ lodgeId: lodge.id }),
+        body: JSON.stringify({
+          lodgeId: lodge.id,
+          userName: reserveName.trim(),
+          userContact: reservePhone.trim(),
+        }),
       });
       if (res.ok) {
         const data = await res.json();
         router.push("/reservations/" + data.id);
+      } else {
+        const err = await res.json();
+        setReserveError(err.error || "Failed to reserve");
       }
     } catch {
-      // empty
+      setReserveError("Something went wrong. Please try again.");
     } finally {
       setReserving(false);
     }
@@ -164,14 +185,21 @@ export default function LodgeDetailPage() {
 
       {/* Hero Image */}
       <div className="relative aspect-[16/9] rounded-2xl overflow-hidden mb-6 animate-fadeIn">
-        <Image
-          src={lodge.imageUrl}
-          alt={lodge.name}
-          fill
-          className="object-cover"
-          priority
-          sizes="(max-width: 896px) 100vw, 896px"
-        />
+        {lodge.imageUrl ? (
+          <Image
+            src={lodge.imageUrl}
+            alt={lodge.name}
+            fill
+            className="object-cover"
+            priority
+            sizes="(max-width: 896px) 100vw, 896px"
+            unoptimized
+          />
+        ) : (
+          <div className="w-full h-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center">
+            <span className="text-4xl font-bold text-white/80">{lodge.name.charAt(0)}</span>
+          </div>
+        )}
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
 
         {/* Tags */}
@@ -328,27 +356,92 @@ export default function LodgeDetailPage() {
             <p className="text-xl font-bold">K{lodge.pricePerNight}</p>
           </div>
           <div className="flex gap-2">
-            <a href={"tel:info" + lodge.city.toLowerCase() + "@staynow.co.zm"}>
-              <Button variant="outline" size="lg" className="gap-2">
-                <Phone className="w-4 h-4" />
-                Call
-              </Button>
-            </a>
+            {lodge.phone && (
+              <a href={"tel:" + lodge.phone}>
+                <Button variant="outline" size="lg" className="gap-2">
+                  <Phone className="w-4 h-4" />
+                  Call
+                </Button>
+              </a>
+            )}
             <Button
               size="lg"
-              onClick={handleReserve}
-              disabled={reserving || lodge.roomsAvailable === 0}
+              onClick={() => {
+                setShowReserveDialog(true);
+              }}
+              disabled={lodge.roomsAvailable === 0}
               className="bg-amber-500 hover:bg-amber-600 text-black font-semibold gap-2 px-8 min-w-[160px]"
             >
               {lodge.roomsAvailable === 0
                 ? "Sold Out"
-                : reserving
-                ? "Reserving..."
                 : "Reserve Now"}
             </Button>
           </div>
         </div>
       </div>
+
+      {/* Reservation Dialog */}
+      {showReserveDialog && (
+        <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center">
+          <div
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            onClick={() => setShowReserveDialog(false)}
+          />
+          <div className="relative bg-background border rounded-t-2xl sm:rounded-2xl w-full sm:max-w-md p-6 animate-slideUp">
+            <button
+              onClick={() => setShowReserveDialog(false)}
+              className="absolute top-4 right-4 text-muted-foreground hover:text-foreground"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <h3 className="text-xl font-bold mb-1">Reserve Your Room</h3>
+            <p className="text-muted-foreground text-sm mb-4">
+              {lodge.name} — K{lodge.pricePerNight}/night
+            </p>
+
+            {reserveError && (
+              <div className="bg-red-50 dark:bg-red-950/30 text-red-600 dark:text-red-400 text-sm p-3 rounded-lg mb-4">
+                {reserveError}
+              </div>
+            )}
+
+            <div className="space-y-3 mb-4">
+              <div>
+                <label className="text-sm font-medium mb-1 block">Your Name</label>
+                <Input
+                  placeholder="e.g. John Banda"
+                  value={reserveName}
+                  onChange={(e) => setReserveName(e.target.value)}
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-1 block">Phone Number</label>
+                <Input
+                  placeholder="e.g. +260 977 123 456"
+                  value={reservePhone}
+                  onChange={(e) => setReservePhone(e.target.value)}
+                  type="tel"
+                />
+              </div>
+            </div>
+
+            <p className="text-xs text-muted-foreground mb-4 flex items-center gap-1.5">
+              <Shield className="w-3.5 h-3.5 text-emerald-500" />
+              No online payment — pay on arrival at the lodge
+            </p>
+
+            <Button
+              className="w-full bg-amber-500 hover:bg-amber-600 text-black font-semibold gap-2"
+              size="lg"
+              onClick={handleReserve}
+              disabled={reserving}
+            >
+              {reserving ? "Reserving..." : "Confirm Reservation"}
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

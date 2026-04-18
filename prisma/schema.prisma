@@ -16,22 +16,26 @@ model User {
 }
 
 model Lodge {
-  id          String        @id @default(cuid())
-  name        String
-  description String
-  location    String
-  address     String
-  phone       String
-  price       Float
-  priceUnit   String        @default("night")
-  latitude    Float?
-  longitude   Float?
-  images      String        @default("[]")
-  amenities   String        @default("[]")
-  rating      Float         @default(4.0)
-  totalRooms  Int           @default(10)
-  createdAt   DateTime      @default(now())
-  reservations Reservation[]
+  id              String        @id @default(cuid())
+  name            String
+  description     String
+  location        String
+  address         String
+  phone           String
+  price           Float
+  priceUnit       String        @default("night")
+  latitude        Float?
+  longitude       Float?
+  images          String        @default("[]")
+  amenities       String        @default("[]")
+  tags            String        @default("[]")
+  rating          Float         @default(4.0)
+  reviewCount     Int           @default(0)
+  totalRooms      Int           @default(10)
+  availableRooms  Int           @default(10)
+  featured        Boolean       @default(false)
+  createdAt       DateTime      @default(now())
+  reservations    Reservation[]
 }
 
 model Reservation {
