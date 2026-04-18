@@ -1,5 +1,5 @@
-import { PrismaClient } from '@prisma/client';
-const prisma = new PrismaClient();
+import { NextResponse } from 'next/server';
+import { db } from '@/lib/db';
 
 const lodges = [
   {
@@ -184,23 +184,43 @@ const lodges = [
   },
 ];
 
-async function main() {
-  console.log('Seeding 10 Zambian lodges into StayNow...');
+export async function POST() {
+  try {
+    // Clear existing data
+    await db.reservation.deleteMany();
+    await db.lodge.deleteMany();
 
-  await prisma.reservation.deleteMany();
-  await prisma.lodge.deleteMany();
+    // Insert all lodges
+    for (const lodge of lodges) {
+      await db.lodge.create({ data: lodge });
+    }
 
-  for (const lodge of lodges) {
-    await prisma.lodge.create({ data: lodge });
-    console.log('  Seeded:', lodge.name);
+    return NextResponse.json({
+      success: true,
+      message: `Seeded ${lodges.length} lodges successfully`,
+      lodges: lodges.map(l => l.name),
+    });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    console.error('Seed error:', error);
+    return NextResponse.json(
+      { success: false, error: message },
+      { status: 500 }
+    );
   }
-
-  console.log('Done! All 10 lodges seeded successfully.');
 }
 
-main()
-  .catch((e) => {
-    console.error('Seed error:', e);
-    process.exit(1);
-  })
-  .finally(() => prisma.$disconnect());
+export async function GET() {
+  try {
+    const count = await db.lodge.count();
+    return NextResponse.json({
+      totalLodges: count,
+      message: count > 0
+        ? `${count} lodges in database. POST /api/seed to re-seed.`
+        : 'No lodges found. POST /api/seed to seed the database.',
+    });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
+}
